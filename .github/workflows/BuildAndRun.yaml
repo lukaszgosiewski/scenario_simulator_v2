@@ -75,8 +75,8 @@ jobs:
           REPO_NAME: "my-org/my-cpp-project"
           BRANCH_NAME: "main"
           COMMIT_HASH: ${{ github.sha }}
-          PATH_TO_CODE: "/__w/scenario_simulator_v2/scenario_simulator_v2/src"
-          PATH_TO_BUILDING_SCRIPT: "/__w/scenario_simulator_v2/scenario_simulator_v2/src/scenario_simulator_v2/build.sh"
+          PATH_TO_CODE: '/__w/scenario_simulator_v2/scenario_simulator_v2/src'
+          PATH_TO_BUILDING_SCRIPT: '/__w/scenario_simulator_v2/scenario_simulator_v2/src/scenario_simulator_v2/build.sh'
           AUTH_URL: "https://auth.qa.soc.plaxidityx.com/auth/realms/cloud/protocol/openid-connect/token"
           APP_URL: "vvm-qa.a.qa.soc.plaxidityx.com/public-api/guideline/v1/guideline-violations"
           USERNAME: "xxx"
