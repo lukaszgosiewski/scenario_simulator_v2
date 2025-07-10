@@ -56,9 +56,13 @@ jobs:
           sudo apt update
           sudo apt install ros-humble-desktop
           sudo apt-get install ros-humble-ament-cmake-core
-          cd src/scenario_simulator_v2
+
+          mkdir -p ~/scenario_simulator_ws/src
+          cd ~/scenario_simulator_ws/src
+          git clone https://github.com/tier4/scenario_simulator_v2.git
+          cd scenario_simulator_v2
           vcs import external < dependency_humble.repos
-          cd ../..
+          cd ~/scenario_simulator_ws
           source /opt/ros/humble/setup.bash
           rosdep install -iry --from-paths src/scenario_simulator_v2 --rosdistro humble
 
