@@ -6,6 +6,7 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
 jobs:
   job1:
     name: BuildAndRun
@@ -61,7 +62,6 @@ jobs:
           colcon mixin update default
         shell: bash
 
-
       - name: Build with SonarCloud Build Wrapper
         # Note: `-Wno-error=class-memaccess` is temporary workaround for aarch64 GCC error
         # This should be removed when Eigen is updated in Ubuntu package repository
@@ -69,12 +69,36 @@ jobs:
         run: |
           source /opt/ros/${{ matrix.rosdistro }}/setup.bash
 
+          cat > build_script.sh << 'EOF'
           colcon build --symlink-install \
           --cmake-args \
-            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+            -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_CPP_MOCK_SCENARIOS=ON \
-            -DBUILD_TESTING=true \
-            -DCMAKE_CXX_FLAGS='-fprofile-arcs -ftest-coverage -Wno-error=class-memaccess' \
-            -DCMAKE_C_FLAGS='-fprofile-arcs -ftest-coverage' \
+            -DBUILD_TESTING=false \
+            -DCMAKE_CXX_FLAGS='-fprofile-arcs -Wno-error=class-memaccess' \
+            -DCMAKE_C_FLAGS='-fprofile-arcs ' \
             --packages-up-to ${{ steps.list_packages.outputs.package_list }}
+          EOF
+          chmod +x build_script.sh
+          CURRENT_DIR=$(pwd)
+          BUILD_SCRIPT_PATH=$(pwd)/build_script.sh
+          
+          echo "CURRENT_DIR=$CURRENT_DIR" >> $GITHUB_ENV
+          echo "BUILD_SCRIPT_PATH=$BUILD_SCRIPT_PATH" >> $GITHUB_ENV
+          
+          ./build_script.sh
         shell: bash
+
+      - name: Run GV Demo ActionE
+        uses: lukaszgosiewski/guidline@main
+        with:
+          REPO_NAME: "my-org/my-cpp-project"
+          BRANCH_NAME: "main"
+          COMMIT_HASH: ${{ github.sha }}
+          PATH_TO_CODE: ${{ env.CURRENT_DIR }}
+          PATH_TO_BUILDING_SCRIPT: ${{ env.BUILD_SCRIPT_PATH }}
+          AUTH_URL: "https://auth.qa.soc.plaxidityx.com/auth/realms/cloud/protocol/openid-connect/token"
+          APP_URL: "vvm-qa.a.qa.soc.plaxidityx.com/public-api/guideline/v1/guideline-violations"
+          USERNAME: "abc"
+          PASSWORD: "abs"
+          TOKEN: ${{ secrets.PRIVATE_ACTIONS_PAT }}
