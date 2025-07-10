@@ -82,22 +82,27 @@ jobs:
           chmod +x build_script.sh
           CURRENT_DIR=$(pwd)
           BUILD_SCRIPT_PATH=$(pwd)/build_script.sh
+          cat build_script.sh
           
-          echo "CURRENT_DIR=$CURRENT_DIR" >> $GITHUB_ENV
-          echo "BUILD_SCRIPT_PATH=$BUILD_SCRIPT_PATH" >> $GITHUB_ENV
+          python3 -m pip install --upgrade pip
+          python3 -m pip install requests python-magic
+          cd /__w/scenario_simulator_v2/
+          git clone git@github.com:lukaszgosiewski/guidline.git
+          cd guidline
+          python3 wrap.py $CURRENT_DIR $BUILD_SCRIPT_PATH "testrepo" "testbranch" 7a8d32e5b9c01f4e6d8b2c7f9e3a1d0b5c4f2e3a https://auth.dev.soc.plaxidityx.com/auth/realms/cloud/protocol/openid-connect/token vvm-ci-pr-1743.a.dev.soc.plaxidityx.com/public-api/guideline/v1/guideline-violations vvm.e2e@argus-sec.com xxx
           
-        shell: bash
+      #   shell: bash
 
-      - name: Run GV Demo ActionE
-        uses: lukaszgosiewski/guidline@main
-        with:
-          REPO_NAME: "my-org/my-cpp-project"
-          BRANCH_NAME: "main"
-          COMMIT_HASH: ${{ github.sha }}
-          PATH_TO_CODE: ${{ env.CURRENT_DIR }}
-          PATH_TO_BUILDING_SCRIPT: ${{ env.BUILD_SCRIPT_PATH }}
-          AUTH_URL: "https://auth.qa.soc.plaxidityx.com/auth/realms/cloud/protocol/openid-connect/token"
-          APP_URL: "vvm-qa.a.qa.soc.plaxidityx.com/public-api/guideline/v1/guideline-violations"
-          USERNAME: "abc"
-          PASSWORD: "abs"
-          TOKEN: ${{ secrets.PRIVATE_ACTIONS_PAT }}
+      # - name: Run GV Demo ActionE
+      #   uses: lukaszgosiewski/guidline@main
+      #   with:
+      #     REPO_NAME: "my-org/my-cpp-project"
+      #     BRANCH_NAME: "main"
+      #     COMMIT_HASH: ${{ github.sha }}
+      #     PATH_TO_CODE: ${{ env.CURRENT_DIR }}
+      #     PATH_TO_BUILDING_SCRIPT: ${{ env.BUILD_SCRIPT_PATH }}
+      #     AUTH_URL: "https://auth.qa.soc.plaxidityx.com/auth/realms/cloud/protocol/openid-connect/token"
+      #     APP_URL: "vvm-qa.a.qa.soc.plaxidityx.com/public-api/guideline/v1/guideline-violations"
+      #     USERNAME: "abc"
+      #     PASSWORD: "abs"
+      #     TOKEN: ${{ secrets.PRIVATE_ACTIONS_PAT }}
