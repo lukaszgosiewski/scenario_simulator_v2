@@ -86,7 +86,6 @@ jobs:
           echo "CURRENT_DIR=$CURRENT_DIR" >> $GITHUB_ENV
           echo "BUILD_SCRIPT_PATH=$BUILD_SCRIPT_PATH" >> $GITHUB_ENV
           
-          ./build_script.sh
         shell: bash
 
       - name: Run GV Demo ActionE
