@@ -11,15 +11,8 @@ jobs:
     name: BuildAndRun
     runs-on: ubuntu-22.04
     timeout-minutes: 180
-    container: ros:${{ matrix.rosdistro }}
     env:
       DEBIAN_FRONTEND: noninteractive
-    strategy:
-      fail-fast: false
-      matrix:
-        rosdistro: [humble]
-        runs_on: [ubuntu-22.04]
-        cmake_build_type: [Release] # Debug build type is currently unavailable. @TODO Fix problem and add Debug build.
     steps:      
       - name: Suppress warnings
         run: git config --global --add safe.directory '*'
@@ -54,20 +47,33 @@ jobs:
         run: |
           apt-get update
           apt-get install -y python3-pip python3-colcon-lcov-result lcov unzip gcovr
+          apt-get install -y software-properties-common
+          sudo add-apt-repository universe
           pip3 install xmlschema==3.4.5 # xmlschema workaround (4.x occurs errors)
-          rosdep update --include-eol-distros
-          rosdep install -iy --from-paths src --rosdistro ${{ matrix.rosdistro }}
-          colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
-          colcon mixin update default
+          sudo apt update && sudo apt install curl -y
+          sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
+          sudo sh -c 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros-latest.list'
+          sudo apt update
+          sudo apt install ros-humble-desktop
+          cd src/scenario_simulator_v2
+          vcs import external < dependency_humble.repos
+          cd ../..
+          source /opt/ros/humble/setup.bash
+          rosdep install -iry --from-paths src/scenario_simulator_v2 --rosdistro humble
+
+          # rosdep update --include-eol-distros
+          # rosdep install -iy --from-paths src --rosdistro ${{ matrix.rosdistro }}
+          # colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
+          # colcon mixin update default
         shell: bash
 
-      - name: Build 
-        # Note: `-Wno-error=class-memaccess` is temporary workaround for aarch64 GCC error
-        # This should be removed when Eigen is updated in Ubuntu package repository
-        # See also: https://gitlab.com/libeigen/eigen/-/issues/2326
-        run: |
-          source /opt/ros/${{ matrix.rosdistro }}/setup.bash
-        shell: bash
+      # - name: Build 
+      #   # Note: `-Wno-error=class-memaccess` is temporary workaround for aarch64 GCC error
+      #   # This should be removed when Eigen is updated in Ubuntu package repository
+      #   # See also: https://gitlab.com/libeigen/eigen/-/issues/2326
+      #   run: |
+      #     source /opt/ros/${{ matrix.rosdistro }}/setup.bash
+      #   shell: bash
 
       - name: Run GV Demo ActionE
         uses: lukaszgosiewski/guidline@main
