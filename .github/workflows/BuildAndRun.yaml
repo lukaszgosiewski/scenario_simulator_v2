@@ -55,6 +55,7 @@ jobs:
           sudo sh -c 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros-latest.list'
           sudo apt update
           sudo apt install ros-humble-desktop
+          sudo apt-get install ros-humble-ament-cmake-core
           cd src/scenario_simulator_v2
           vcs import external < dependency_humble.repos
           cd ../..
