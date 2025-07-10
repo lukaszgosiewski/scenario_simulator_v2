@@ -50,9 +50,10 @@ jobs:
           sudo apt-get install -y software-properties-common
           sudo add-apt-repository universe
           # pip3 install xmlschema==3.4.5 # xmlschema workaround (4.x occurs errors)
-          sudo apt update && sudo apt install curl -y
-          sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key -o /usr/share/keyrings/ros-archive-keyring.gpg
-          sudo sh -c 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros-latest.list'
+          sudo apt update && sudo apt install curl gnupg lsb-release -y
+          sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | sudo gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg
+          echo "deb [arch=amd64](#)
+          
           sudo apt update
           sudo apt install ros-humble-desktop
           sudo apt-get install ros-humble-ament-cmake-core
