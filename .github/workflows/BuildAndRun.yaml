@@ -9,10 +9,17 @@ concurrency:
 jobs:
   job1:
     name: BuildAndRun
-    runs-on: ubuntu-22.04
+    runs-on: ${{ matrix.runs_on }}
     timeout-minutes: 180
+    container: ros:${{ matrix.rosdistro }}
     env:
       DEBIAN_FRONTEND: noninteractive
+    strategy:
+      fail-fast: false
+      matrix:
+        rosdistro: [humble]
+        runs_on: [ubuntu-22.04]
+        cmake_build_type: [Release] # Debug build type is currently unavailable. @TODO Fix problem and add Debug build.
     steps:      
       - name: Suppress warnings
         run: git config --global --add safe.directory '*'
@@ -39,62 +46,40 @@ jobs:
         run: |
           echo "Target packages: ${{ steps.list_packages.outputs.package_list }}"
 
-      # - name: Install dependencies
-      #   run: |
-      #     vcs import src < src/scenario_simulator_v2/dependency_${{ matrix.rosdistro }}.repos
+      - name: Install dependencies
+        run: |
+          vcs import src < src/scenario_simulator_v2/dependency_${{ matrix.rosdistro }}.repos
 
       - name: Resolve rosdep and install colcon mixin
         run: |
-          sudo apt-get update
-          # sudo apt-get install -y python3-pip python3-colcon-lcov-result lcov unzip gcovr
-          sudo apt-get install -y software-properties-common
-          sudo add-apt-repository universe
-          # pip3 install xmlschema==3.4.5 # xmlschema workaround (4.x occurs errors)
-          sudo apt update && sudo apt install curl gnupg lsb-release -y
-          sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | sudo gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg
-          echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(. /etc/os-release && echo $UBUNTU_CODENAME) main" | sudo tee /etc/apt/sources.list.d/ros2.list > /dev/null
-          
-          sudo apt update
-          sudo apt-get install -y python3-vcstool
-          sudo apt install ros-humble-desktop
-          sudo apt-get install ros-humble-ament-cmake-core
-
-          mkdir -p ~/scenario_simulator_ws/src
-          cd ~/scenario_simulator_ws/src
-          git clone https://github.com/tier4/scenario_simulator_v2.git
-          cd scenario_simulator_v2
-          vcs import external < dependency_humble.repos
-          cd ~/scenario_simulator_ws
-          source /opt/ros/humble/setup.bash
-          rosdep install -iry --from-paths src/scenario_simulator_v2 --rosdistro humble
-          colcon build --symlink-install --cmake-args -DCMAKE_BUILD_TYPE=Release
-
-          # rosdep update --include-eol-distros
-          # rosdep install -iy --from-paths src --rosdistro ${{ matrix.rosdistro }}
-          # colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
-          # colcon mixin update default
+          apt-get update
+          apt-get install -y python3-pip python3-colcon-lcov-result lcov unzip gcovr
+          pip3 install xmlschema==3.4.5 # xmlschema workaround (4.x occurs errors)
+          rosdep update --include-eol-distros
+          rosdep install -iy --from-paths src --rosdistro ${{ matrix.rosdistro }}
+          colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
+          colcon mixin update default
         shell: bash
 
-      # - name: Build 
-      #   # Note: `-Wno-error=class-memaccess` is temporary workaround for aarch64 GCC error
-      #   # This should be removed when Eigen is updated in Ubuntu package repository
-      #   # See also: https://gitlab.com/libeigen/eigen/-/issues/2326
-      #   run: |
-      #     source /opt/ros/${{ matrix.rosdistro }}/setup.bash
-      #   shell: bash
+      - name: Install Build Wrapper
+        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v4.2.1
+        id: build_wrapper
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
-      # - name: Run GV Demo ActionE
-      #   uses: lukaszgosiewski/guidline@main
-      #   with:
-      #     REPO_NAME: "my-org/my-cpp-project"
-      #     BRANCH_NAME: "main"
-      #     COMMIT_HASH: ${{ github.sha }}
-      #     PATH_TO_CODE: "/__w/scenario_simulator_v2/scenario_simulator_v2/src"
-      #     PATH_TO_BUILDING_SCRIPT: "/__w/scenario_simulator_v2/scenario_simulator_v2/src/scenario_simulator_v2/build.sh"
-      #     AUTH_URL: "https://auth.qa.soc.plaxidityx.com/auth/realms/cloud/protocol/openid-connect/token"
-      #     APP_URL: "vvm-qa.a.qa.soc.plaxidityx.com/public-api/guideline/v1/guideline-violations"
-      #     USERNAME: "xxx"
-      #     PASSWORD: "yyy"
-      #     TOKEN: ${{ secrets.PRIVATE_ACTIONS_PAT }}
-
-      
+      - name: Build with SonarCloud Build Wrapper
+        # Note: `-Wno-error=class-memaccess` is temporary workaround for aarch64 GCC error
+        # This should be removed when Eigen is updated in Ubuntu package repository
+        # See also: https://gitlab.com/libeigen/eigen/-/issues/2326
+        run: |
+          source /opt/ros/${{ matrix.rosdistro }}/setup.bash
+          ${{ steps.build_wrapper.outputs.build-wrapper-binary }} --out-dir src/scenario_simulator_v2/bw-output \
+          colcon build --symlink-install \
+          --cmake-args \
+            -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
+            -DBUILD_CPP_MOCK_SCENARIOS=ON \
+            -DBUILD_TESTING=true \
+            -DCMAKE_CXX_FLAGS='-fprofile-arcs -ftest-coverage -Wno-error=class-memaccess' \
+            -DCMAKE_C_FLAGS='-fprofile-arcs -ftest-coverage' \
+            --packages-up-to ${{ steps.list_packages.outputs.package_list }}
+        shell: bash
