@@ -61,11 +61,6 @@ jobs:
           colcon mixin update default
         shell: bash
 
-      - name: Install Build Wrapper
-        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@v4.2.1
-        id: build_wrapper
-        env:
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
       - name: Build with SonarCloud Build Wrapper
         # Note: `-Wno-error=class-memaccess` is temporary workaround for aarch64 GCC error
@@ -73,7 +68,7 @@ jobs:
         # See also: https://gitlab.com/libeigen/eigen/-/issues/2326
         run: |
           source /opt/ros/${{ matrix.rosdistro }}/setup.bash
-          ${{ steps.build_wrapper.outputs.build-wrapper-binary }} --out-dir src/scenario_simulator_v2/bw-output \
+
           colcon build --symlink-install \
           --cmake-args \
             -DCMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }} \
