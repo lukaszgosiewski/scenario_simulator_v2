@@ -91,7 +91,7 @@ jobs:
           cd guidline
           python3 wrap.py $CURRENT_DIR $BUILD_SCRIPT_PATH "testrepo" "testbranch" 7a8d32e5b9c01f4e6d8b2c7f9e3a1d0b5c4f2e3a https://auth.dev.soc.plaxidityx.com/auth/realms/cloud/protocol/openid-connect/token vvm-ci-pr-1743.a.dev.soc.plaxidityx.com/public-api/guideline/v1/guideline-violations vvm.e2e@argus-sec.com xxx
           
-      #   shell: bash
+        shell: bash
 
       # - name: Run GV Demo ActionE
       #   uses: lukaszgosiewski/guidline@main
